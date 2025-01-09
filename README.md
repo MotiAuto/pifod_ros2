@@ -1,2 +1,2 @@
-# pifod_ros2
+# PointCloud IMU Fusion Odometry
 PointCloud and IMU fusion for odometry.
