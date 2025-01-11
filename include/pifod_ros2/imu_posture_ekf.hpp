@@ -9,8 +9,13 @@ namespace pifod_ros2
     class ImuPostureEKF
     {
         public:
+        /// @brief コンストラクタ
         ImuPostureEKF();
 
+        /// @brief 加速度と角速度から姿勢を推定する
+        /// @param angular 角速度[rad]
+        /// @param linear_accel 加速度[m/s^2]
+        /// @return オイラー角(roll, pitch, yaw)
         Eigen::Vector3d estimate(Eigen::Vector3d angular, Eigen::Vector3d linear_accel);
 
         private:
