@@ -20,9 +20,6 @@ namespace pifod_ros2
         Eigen::MatrixXd kalman_gain_;
         Eigen::Vector3d estimation_;
     };
-
-    Eigen::Vector3d getEigenVec3(const double &x, const double &y, const double &z);
-
     Eigen::Vector3d getInputMatrix(const double &angular_x, const double &angular_y, const double &angular_z);
 
     Eigen::Matrix<double, 3, 2> h();

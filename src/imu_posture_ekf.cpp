@@ -35,11 +35,6 @@ namespace pifod_ros2
         return estimation_;
     }
 
-    Eigen::Vector3d getEigenVec3(const double &x, const double &y, const double &z)
-    {
-        return Eigen::Vector3d(x, y, z);
-    }
-
     Eigen::Vector3d getInputMatrix(const double &angular_x, const double &angular_y, const double &angular_z)
     {
         return Eigen::Vector3d(

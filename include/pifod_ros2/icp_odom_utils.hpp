@@ -3,7 +3,10 @@
 
 namespace pifod_ros2
 {
-    
+    class ICPOdometer
+    {
+
+    };
 }
 
 #endif
