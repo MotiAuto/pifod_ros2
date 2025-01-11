@@ -3,11 +3,11 @@
 namespace pifod_ros2
 {
     ImuPostureEKF::ImuPostureEKF()
-    : estimation_(Eigen::Vector3d(0.0, 0.0, 0.0)),
-    cov_(Eigen::Matrix3d::Identity()),
-    estimation_noise_(Eigen::Matrix3d::Identity()),
-    observation_noise_(Eigen::Matrix2d::Zero()),
-    kalman_gain_(Eigen::Matrix<double, 3, 2>::Zero())
+    : estimation_(Eigen::Vector3f(0.0, 0.0, 0.0)),
+    cov_(Eigen::Matrix3f::Identity()),
+    estimation_noise_(Eigen::Matrix3f::Identity()),
+    observation_noise_(Eigen::Matrix2f::Zero()),
+    kalman_gain_(Eigen::Matrix<float, 3, 2>::Zero())
     {
         cov_(0, 0) = 0.0174*0.001;
         cov_(1, 1) = 0.0174*0.001;
@@ -18,7 +18,7 @@ namespace pifod_ros2
         estimation_noise_(2, 2) = 0.0174*0.001;
     }
 
-    Eigen::Vector3d ImuPostureEKF::estimate(Eigen::Vector3d angular, Eigen::Vector3d linear_accel)
+    Eigen::Vector3f ImuPostureEKF::estimate(Eigen::Vector3f angular, Eigen::Vector3f linear_accel)
     {
         const auto input_matrix = getInputMatrix(angular.x(), angular.y(), angular.z());
 
@@ -35,18 +35,18 @@ namespace pifod_ros2
         return estimation_;
     }
 
-    Eigen::Vector3d getInputMatrix(const double &angular_x, const double &angular_y, const double &angular_z)
+    Eigen::Vector3f getInputMatrix(const float &angular_x, const float &angular_y, const float &angular_z)
     {
-        return Eigen::Vector3d(
+        return Eigen::Vector3f(
             angular_x* 0.001,
             angular_y* 0.001,
             angular_z* 0.001
         );
     }
 
-    Eigen::Matrix<double, 3, 2> h()
+    Eigen::Matrix<float, 3, 2> h()
     {
-        Eigen::Matrix<double, 3, 2> h_;
+        Eigen::Matrix<float, 3, 2> h_;
         h_.setZero();
         h_(0, 0) = 1.0;
         h_(1, 1) = 1.0;
@@ -54,7 +54,7 @@ namespace pifod_ros2
         return h_;
     }
 
-    Eigen::Matrix3d jacob(const Eigen::Vector3d &input_matrix, const Eigen::Vector3d &estimation)
+    Eigen::Matrix3f jacob(const Eigen::Vector3f &input_matrix, const Eigen::Vector3f &estimation)
     {
         auto cos_roll = cos(estimation.x());
         auto sin_roll = sin(estimation.x());
@@ -67,7 +67,7 @@ namespace pifod_ros2
         auto m_31 = input_matrix.y()*(cos_roll/cos_pitch) - input_matrix.z()*(sin_roll/cos_pitch);
         auto m_32 = input_matrix.y()*((sin_roll*sin_pitch)/(cos_pitch*cos_pitch))+input_matrix.z()*((cos_roll*sin_pitch)/(cos_pitch*cos_pitch));
 
-        Eigen::Matrix3d mat;
+        Eigen::Matrix3f mat;
         mat.setZero();
         mat(0, 0) = m_11;
         mat(0, 1) = m_12;
@@ -79,14 +79,14 @@ namespace pifod_ros2
         return mat;
     }
 
-    Eigen::Vector3d predictX(const Eigen::Vector3d &input_matrix, const Eigen::Vector3d &estimation)
+    Eigen::Vector3f predictX(const Eigen::Vector3f &input_matrix, const Eigen::Vector3f &estimation)
     {
         auto cos_roll = cos(estimation.x());
         auto sin_roll = sin(estimation.x());
         auto cos_pitch = cos(estimation.y());
         auto sin_pitch = sin(estimation.y());
 
-        Eigen::Vector3d est;
+        Eigen::Vector3f est;
         est(0) = estimation.x() + input_matrix.x() + input_matrix.y()*((sin_roll*sin_pitch)/cos_pitch)+input_matrix.z()*((cos_roll*sin_pitch)/cos_pitch);
         est(1) = estimation.y() + input_matrix.y() * cos_roll - input_matrix.z()*sin_roll;
         est(2) = estimation.z() + input_matrix.z() + input_matrix.y()*(sin_roll/cos_pitch) + input_matrix.z()*(cos_roll/cos_pitch);
@@ -94,26 +94,26 @@ namespace pifod_ros2
         return est;
     }
 
-    Eigen::Matrix3d predictCov(const Eigen::Matrix3d &jacob, const Eigen::Matrix3d &cov, const Eigen::Matrix3d &est_noise)
+    Eigen::Matrix3f predictCov(const Eigen::Matrix3f &jacob, const Eigen::Matrix3f &cov, const Eigen::Matrix3f &est_noise)
     {
-        Eigen::Matrix3d t_jacob = jacob.transpose();
-        Eigen::Matrix3d jacob_cov = jacob * cov;
+        Eigen::Matrix3f t_jacob = jacob.transpose();
+        Eigen::Matrix3f jacob_cov = jacob * cov;
 
-        Eigen::Matrix3d new_cov;
+        Eigen::Matrix3f new_cov;
         new_cov.setZero();
 
-        Eigen::Matrix3d multiplied = jacob_cov * t_jacob;
+        Eigen::Matrix3f multiplied = jacob_cov * t_jacob;
 
         new_cov = multiplied + est_noise;
 
         return new_cov;
     }
 
-    Eigen::Vector2d updateResidual(const Eigen::Vector2d &obs, const Eigen::Vector3d &est)
+    Eigen::Vector2f updateResidual(const Eigen::Vector2f &obs, const Eigen::Vector3f &est)
     {
-        Eigen::Vector2d result;
-        Eigen::Matrix<double, 2, 3> h_ = h().transpose();
-        Eigen::Vector2d h_est = h_ * est;
+        Eigen::Vector2f result;
+        Eigen::Matrix<float, 2, 3> h_ = h().transpose();
+        Eigen::Vector2f h_est = h_ * est;
 
         result(0) = obs.x() - h_est.x();
         result(1) = obs.y() - h_est.y();
@@ -121,31 +121,31 @@ namespace pifod_ros2
         return result;
     }
 
-    Eigen::Matrix2d updateS(const Eigen::Matrix3d &cov_, const Eigen::Matrix2d &obs_noise)
+    Eigen::Matrix2f updateS(const Eigen::Matrix3f &cov_, const Eigen::Matrix2f &obs_noise)
     {
-        Eigen::Matrix<double, 2, 3> h_ = h().transpose();
-        Eigen::Matrix<double, 2, 3> h_cov_ = h_ * cov_;
-        Eigen::Matrix2d convert_cov_ = h_cov_ * h();
+        Eigen::Matrix<float, 2, 3> h_ = h().transpose();
+        Eigen::Matrix<float, 2, 3> h_cov_ = h_ * cov_;
+        Eigen::Matrix2f convert_cov_ = h_cov_ * h();
 
         return obs_noise + convert_cov_;
     }
 
-    Eigen::Matrix<double, 3, 2> updateKalmanGain(const Eigen::Matrix2d &s, const Eigen::Matrix3d &cov)
+    Eigen::Matrix<float, 3, 2> updateKalmanGain(const Eigen::Matrix2f &s, const Eigen::Matrix3f &cov)
     {
         auto h_ = h();
 
-        Eigen::Matrix2d inverse_s = s.inverse();
+        Eigen::Matrix2f inverse_s = s.inverse();
 
-        Eigen::Matrix<double, 3, 2> cov_and_h = cov * h_;
+        Eigen::Matrix<float, 3, 2> cov_and_h = cov * h_;
 
         return cov_and_h * inverse_s;
     }
 
-    Eigen::Vector3d updateX(const Eigen::Vector3d &est, const Eigen::Matrix<double, 3, 2> &kalman_gain_, const Eigen::Vector2d &residual)
+    Eigen::Vector3f updateX(const Eigen::Vector3f &est, const Eigen::Matrix<float, 3, 2> &kalman_gain_, const Eigen::Vector2f &residual)
     {
-        Eigen::Vector3d kalman_res = kalman_gain_ * residual;
+        Eigen::Vector3f kalman_res = kalman_gain_ * residual;
 
-        Eigen::Vector3d result;
+        Eigen::Vector3f result;
         result.setZero();
 
         result(0) = est.x() + kalman_res.x();
@@ -155,23 +155,23 @@ namespace pifod_ros2
         return result;
     }
 
-    Eigen::Matrix3d updateCov(const Eigen::Matrix<double, 3, 2> &kalman_gain, const Eigen::Matrix3d &cov)
+    Eigen::Matrix3f updateCov(const Eigen::Matrix<float, 3, 2> &kalman_gain, const Eigen::Matrix3f &cov)
     {
-        Eigen::Matrix3d i;
+        Eigen::Matrix3f i;
         i.setIdentity();
 
-        Eigen::Matrix<double, 2, 3> h_ = h().transpose();
+        Eigen::Matrix<float, 2, 3> h_ = h().transpose();
 
-        Eigen::Matrix3d kalman_h = kalman_gain * h_;
+        Eigen::Matrix3f kalman_h = kalman_gain * h_;
 
-        Eigen::Matrix3d i_k_h = i - kalman_h;
+        Eigen::Matrix3f i_k_h = i - kalman_h;
 
         return i_k_h * cov;
     }
 
-    Eigen::Vector2d obsModel(const Eigen::Vector3d &linear_accel)
+    Eigen::Vector2f obsModel(const Eigen::Vector3f &linear_accel)
     {
-        Eigen::Vector2d model;
+        Eigen::Vector2f model;
 
         if(linear_accel.z() == 0.0)
         {

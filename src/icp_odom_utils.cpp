@@ -21,8 +21,8 @@ namespace pifod_ros2
         pcl::PointCloud<pcl::PointXYZ>::Ptr source(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::fromROSMsg(*cloud, *source);
 
-        Eigen::Matrix3f r = Eigen::Matrix3d::Identity();
-        Eigen::Vector3f t = Eigen::Vector3d::Zero();
+        Eigen::Matrix3f r = Eigen::Matrix3f::Identity();
+        Eigen::Vector3f t = Eigen::Vector3f::Zero();
 
         pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_src = source;
 
@@ -39,8 +39,8 @@ namespace pifod_ros2
 
             const auto matched_target = matching(transformed_src, target_);
 
-            Eigen::MatrixXd A(3, 3);
-            Eigen::VectorXd b(3);
+            Eigen::MatrixXf A(3, 3);
+            Eigen::VectorXf b(3);
             A.setZero();
             b.setZero();
 
