@@ -28,39 +28,44 @@ namespace pifod_ros2
 
         for(int i = 0; i < max_iter_; i++)
         {
-            for(auto& point : *transformed_src)
-            {
-                auto p_vec = toEigenVec3(point);
-                p_vec = r * p_vec + t;
-                point.x = p_vec[0];
-                point.y = p_vec[1];
-                point.z = p_vec[2];
-            }
 
             const auto matched_target = matching(transformed_src, target_);
 
             Eigen::MatrixXf A(3, 3);
-            Eigen::VectorXf b(3);
             A.setZero();
-            b.setZero();
+            Eigen::Vector3f src_center(0.0, 0.0, 0.0);
+            Eigen::Vector3f tar_center(0.0, 0.0, 0.0);
 
             for(size_t i = 0; i < transformed_src->size(); i++)
             {
-                const auto src_p = toEigenVec3(transformed_src->at(i));
-                const auto tar_p = toEigenVec3(matched_target.at(i));
+                const auto src_p = pifod_common_utils::toEigenVec3(transformed_src->at(i));
+                const auto tar_p = pifod_common_utils::toEigenVec3(matched_target.at(i));
 
-                A += src_p * src_p.transpose();
-                b += src_p - tar_p;
+                src_center += src_p;
+                tar_center += tar_p;
+            }
+
+            src_center /= transformed_src->size();
+            tar_center /= matched_target.size();
+
+            for(size_t i = 0; i < transformed_src->size(); i++)
+            {
+                const auto src_p = pifod_common_utils::toEigenVec3(transformed_src->at(i)) -src_center;
+                const auto tar_p = pifod_common_utils::toEigenVec3(matched_target.at(i)) - tar_center;
+
+                A += src_p * tar_p.transpose();
             }
 
             Eigen::JacobiSVD<Eigen::MatrixXf> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
             r = svd.matrixU() * svd.matrixV().transpose();
-            t = b;
+            t = tar_center - r * src_center;
 
             if(t.norm() < tolerance_)
             {
                 break;
             }
+            
+            transformed_src = transformPointCloud(transformed_src, r, t);
         }
 
         translation_ = t;

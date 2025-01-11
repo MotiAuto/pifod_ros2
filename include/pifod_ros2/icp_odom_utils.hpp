@@ -4,6 +4,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/filters/filter_indices.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -57,10 +58,11 @@ namespace pifod_ros2
             pcl::KdTreeFLANN<pcl::PointXYZ> kd_tree;
             kd_tree.setInputCloud(target_cloud);
 
-            for(const auto &src_p : *source_cloud)
+            for(const auto &src_p : source_cloud->points)
             {
                 std::vector<int> nearest_indices;
                 std::vector<float> nearest_distances;
+
                 if(kd_tree.nearestKSearch(src_p, 1, nearest_indices, nearest_distances) > 0)
                 {
                     matched.push_back(target_cloud->at(nearest_indices[0]));
@@ -68,6 +70,22 @@ namespace pifod_ros2
             }
 
             return matched;
+        }
+
+        pcl::PointCloud<pcl::PointXYZ>::Ptr transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, const Eigen::Matrix3f &rotate, const Eigen::Vector3f &translate)
+        {
+            pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+            for(const auto& p : cloud->points)
+            {
+                const Eigen::Vector3f eigen_p = pifod_common_utils::toEigenVec3(p);
+                const Eigen::Vector3f rotated = rotate * eigen_p;
+                const Eigen::Vector3f transformed = rotated + translate;
+                
+                transformed_cloud->push_back(pcl::PointXYZ(transformed.x(),transformed.y(),transformed.z()));
+            }
+
+            return transformed_cloud;
         }
     };
 }

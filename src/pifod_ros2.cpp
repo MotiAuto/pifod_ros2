@@ -22,9 +22,9 @@ namespace pifod_ros2
         icp_ = std::make_shared<ICPOdometer>(icp_max_iter_, icp_tolerance_);
 
         icp_odom_ = geometry_msgs::msg::PoseStamped();
-        icp_odom_.header.frame_id = "map";
+        icp_odom_.header.frame_id = "camera_link";
         path_ = nav_msgs::msg::Path();
-        path_.header.frame_id = "map";
+        path_.header.frame_id = "camera_link";
 
         RCLCPP_INFO(this->get_logger(), "Start PointCloud IMU Fusion Odometry");
     }
@@ -35,6 +35,7 @@ namespace pifod_ros2
         {
             icp_->setTarget(msg);
             icp_setTargetFlag_ = true;
+            RCLCPP_INFO(this->get_logger(), "Set Target PointCloud");
             
             return;
         }
@@ -44,9 +45,10 @@ namespace pifod_ros2
         const auto t = icp_->getTranslation();
         const auto q = icp_->getPosture();
 
-        icp_odom_.pose.position.x = t[0];
-        icp_odom_.pose.position.y = t[1];
-        icp_odom_.pose.position.z = t[2];
+        icp_odom_.pose.position.x = t.z();
+        icp_odom_.pose.position.y = t.y();
+        icp_odom_.pose.position.z = 0.0;
+        RCLCPP_INFO(this->get_logger(), "x:%lf, y:%lf, z:%lf", t.x(), t.y(), t.z());
         icp_odom_.pose.orientation.w = q.w();
         icp_odom_.pose.orientation.x = q.x();
         icp_odom_.pose.orientation.y = q.y();
