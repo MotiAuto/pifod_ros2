@@ -50,8 +50,8 @@ namespace pifod_ros2
 
             for(size_t i = 0; i < transformed_src->size(); i++)
             {
-                const auto src_p = pifod_common_utils::toEigenVec3(transformed_src->at(i)) -src_center;
-                const auto tar_p = pifod_common_utils::toEigenVec3(matched_target.at(i)) - tar_center;
+                const auto src_p = pifod_common_utils::toEigenVec3(transformed_src->at(i));
+                const auto tar_p = pifod_common_utils::toEigenVec3(matched_target.at(i));
 
                 A += src_p * tar_p.transpose();
             }

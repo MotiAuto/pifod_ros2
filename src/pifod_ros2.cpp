@@ -45,8 +45,8 @@ namespace pifod_ros2
         const auto t = icp_->getTranslation();
         const auto q = icp_->getPosture();
 
-        icp_odom_.pose.position.x = t.z();
-        icp_odom_.pose.position.y = t.y();
+        icp_odom_.pose.position.x = t.z()*1.0;
+        icp_odom_.pose.position.y = t.x() * -1.0;
         icp_odom_.pose.position.z = 0.0;
         RCLCPP_INFO(this->get_logger(), "x:%lf, y:%lf, z:%lf", t.x(), t.y(), t.z());
         icp_odom_.pose.orientation.w = q.w();
